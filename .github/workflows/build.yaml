@@ -38,6 +38,7 @@ jobs:
         env:
            BACKEND_URL: ${{  github.event.inputs.backend_url }}
            PRODUCT_VERSION: ${{ github.event.inputs.product_version }}
+           REGISTRY: ${{ secrets.DOCKER_TEST_REGISTRY }}
         run: |
           docker compose build \
                --build-arg BACKEND_URL=$BACKEND_URL
