@@ -4,6 +4,7 @@
 ## Added
 - ability to select room type when creating
 - using @onlyoffice/docspace-sdk-js
+- welcome guide
 
 ## Changed
 - support DocSpace 3.0
