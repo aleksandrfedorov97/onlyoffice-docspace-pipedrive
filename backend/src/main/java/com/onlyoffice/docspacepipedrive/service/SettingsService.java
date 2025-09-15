@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,5 +27,6 @@ public interface SettingsService {
     Settings findByClientId(Long clientId);
     Settings put(Long clientId, Settings settings);
     Settings saveSharedGroup(Long clientId, UUID groupId);
+    Settings setApiKeyValid(Long clientId, boolean valid);
     void clear(Long clientId);
 }

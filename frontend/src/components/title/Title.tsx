@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,11 @@
  */
 
 import React from "react";
-import cx from "classnames";
 
 type TitleProps = {
   text: string;
 };
 
-export const OnlyofficeTitle: React.FC<TitleProps> = ({ text }) => {
-  const style = cx({
-    "text-xl": !!text,
-  });
-
-  return <p className={style}>{text}</p>;
-};
+export const OnlyofficeTitle: React.FC<TitleProps> = ({ text }) => (
+  <p className="text-l font-semibold">{text}</p>
+);

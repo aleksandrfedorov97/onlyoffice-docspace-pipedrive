@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 export type UserResponse = {
   id: string;
   name: string;
-  isSystem: boolean;
   isAdmin: boolean;
   language: {
     country_code: string;
@@ -31,9 +30,4 @@ export type UserResponse = {
 export type DocspaceAccount = {
   userName: string;
   passwordHash: string;
-  canCreateRoom: boolean;
-};
-
-export type DocspaceSettings = {
-  url: string;
 };

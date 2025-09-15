@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,5 @@ public interface ClientService {
     boolean existById(Long id);
     Client create(Client client);
     Client update(Client client);
-    void unsetSystemUser(Long clientId);
     void delete(Long id);
 }

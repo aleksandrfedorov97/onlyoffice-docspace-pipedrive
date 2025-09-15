@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@ import {
 import { AppContext, AppErrorType } from "@context/AppContext";
 
 import CommonError from "@assets/common-error.svg";
-import TokenError from "@assets/token-error.svg";
+import NotAvailable from "@assets/not-available.svg";
 import DenniedError from "@assets/dennied-error.svg";
-import UnreachableError from "@assets/unreachable-error.svg";
 
 import { Command, View } from "@pipedrive/app-extensions-sdk";
 import { requestAccessToRoom } from "@services/room";
 import { getCurrentURL } from "@utils/url";
+import { ErrorResponse } from "src/types/error";
 
 type ErrorPageProps = {
   children?: JSX.Element | JSX.Element[];
@@ -44,33 +44,39 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ children }) => {
   const [processingRequestAccess, setProcessingRequestAccess] = useState(false);
 
   const { t } = useTranslation();
-  const { sdk, user, appError, setAppError } = useContext(AppContext);
+  const { sdk, pipedriveToken, user, appError, setAppError, reloadAppContext } =
+    useContext(AppContext);
 
   useEffect(() => {
     const { parameters } = getCurrentURL();
 
+    if (appError !== undefined) {
+      sdk.execute(Command.RESIZE, { height: 400 }).catch(() => {});
+    }
+
     switch (appError) {
       case AppErrorType.COMMON_ERROR: {
         setErrorProps({
-          Icon: <CommonError className="mb-5" />,
-          title: t("background.error.title.common", "Error"),
+          Icon: <CommonError />,
+          title: t("background.error.title.common", "Something went wrong"),
           subtitle: t(
             "background.error.subtitle.common",
-            "Something went wrong. Please reload the app.",
+            "Could not fetch plugin settings. Please reload the Pipedrive window.",
           ),
+          button: {
+            text: t("button.reload", "Reload"),
+            onClick: () => reloadAppContext(),
+          },
         });
         break;
       }
       case AppErrorType.TOKEN_ERROR: {
         setErrorProps({
-          Icon: <TokenError className="mb-5" />,
-          title: t(
-            "background.error.title.token-expired",
-            "The document security token has expired",
-          ),
+          Icon: <CommonError className="mb-5" />,
+          title: t("background.error.title.common", "Something went wrong"),
           subtitle: t(
             "background.error.subtitle.token-expired",
-            "Something went wrong. Please re-authorize the app.",
+            "The document security token has expired. Please re-authorize the app.",
           ),
           button: {
             text: t("button.reauthorize", "Re-authorize") || "Re-authorize",
@@ -85,67 +91,37 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ children }) => {
       }
       case AppErrorType.PLUGIN_NOT_AVAILABLE: {
         setErrorProps({
-          Icon: <CommonError className="mb-5" />,
-          title: t(
-            "background.error.subtitle.plugin.not-active.message",
-            "ONLYOFFICE DocSpace App is not yet available",
-          ),
-          subtitle: t(
-            "background.error.subtitle.plugin.not-active.help",
-            "Please wait until a Pipedrive Administrator configures the app settings",
-          ),
-        });
-        break;
-      }
-      case AppErrorType.DOCSPACE_CONNECTION: {
-        setErrorProps({
-          Icon: <CommonError className="mb-5" />,
-          title: t(
-            "background.error.subtitle.docspace-connection",
-            "You are not connected to ONLYOFFICE DocSpace",
-          ),
-          subtitle: `${
-            user?.isAdmin
-              ? t(
-                  "background.error.hint.admin.docspace-connection",
-                  "Please go to the Connection Setting to configure ONLYOFFICE DocSpace app settings.",
-                )
-              : t(
-                  "background.error.hint.docspace-connection",
-                  "Please contact the administrator.",
-                )
-          }`,
+          Icon: <NotAvailable />,
+          title: t("background.error.title.not-available", "Not yet available"),
+          subtitle: user?.isAdmin
+            ? `${t(
+                "background.error.subtitle.docspace-connection",
+                "You are not connected to ONLYOFFICE DocSpace.",
+              )} ${t(
+                "background.error.hint.admin.docspace-connection",
+                "Please go to the Connection Setting to configure ONLYOFFICE DocSpace app settings.",
+              )}`
+            : `${t(
+                "background.error.subtitle.plugin.not-active.message",
+                "ONLYOFFICE DocSpace App is not yet available.",
+              )} ${t(
+                "background.error.subtitle.plugin.not-active.help",
+                "Please wait until a Pipedrive Administrator configures the app settings.",
+              )}`,
           button: {
-            text: t("button.settings", "Settings") || "Settings",
+            text: user?.isAdmin
+              ? t("button.settings", "Go to Settings")
+              : t("button.reload", "Reload"),
             onClick: user?.isAdmin
               ? () => sdk.execute(Command.REDIRECT_TO, { view: View.SETTINGS })
-              : undefined,
-          },
-        });
-        break;
-      }
-      case AppErrorType.DOCSPACE_AUTHORIZATION: {
-        setErrorProps({
-          Icon: <CommonError className="mb-5" />,
-          title: t(
-            "background.error.subtitle.docspace-authorization.message",
-            "Can not get authorize in ONLYOFFICE DocSpace",
-          ),
-          subtitle: t(
-            "background.error.subtitle.docspace-authorization.help",
-            "Please go to the Authorization Setting to configure ONLYOFFICE DocSpace app settings",
-          ),
-          button: {
-            text: t("button.settings", "Settings") || "Settings",
-            onClick: () =>
-              sdk.execute(Command.REDIRECT_TO, { view: View.SETTINGS }),
+              : () => reloadAppContext(),
           },
         });
         break;
       }
       case AppErrorType.DOCSPACE_ROOM_NOT_FOUND: {
         setErrorProps({
-          Icon: <DenniedError className="mb-5" />,
+          Icon: <DenniedError />,
           title: t(
             "background.error.title.create-room",
             "Sorry, you don't have a permission to create rooms",
@@ -159,7 +135,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ children }) => {
       }
       case AppErrorType.DOCSPACE_ROOM_NO_ACCESS: {
         setErrorProps({
-          Icon: <DenniedError className="mb-5" />,
+          Icon: <DenniedError />,
           title: t(
             "background.error.title.no-room-access",
             "Sorry, you don't have access to this room",
@@ -174,7 +150,10 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ children }) => {
             loading: processingRequestAccess,
             onClick: () => {
               setProcessingRequestAccess(true);
-              requestAccessToRoom(sdk, Number(parameters.get("selectedIds")))
+              requestAccessToRoom(
+                pipedriveToken,
+                Number(parameters.get("selectedIds")),
+              )
                 .then(async () => {
                   await sdk.execute(Command.SHOW_SNACKBAR, {
                     message: t(
@@ -184,7 +163,45 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ children }) => {
                   });
                   setAppError(undefined);
                 })
-                .catch(async () => {
+                .catch(async (e) => {
+                  const data = e?.response?.data as ErrorResponse;
+                  if (
+                    e?.response?.status === 503 &&
+                    data?.cause === "DocspaceUrlNotFoundException"
+                  ) {
+                    setAppError(AppErrorType.PLUGIN_NOT_AVAILABLE);
+                    return;
+                  }
+
+                  if (
+                    e?.response?.status === 503 &&
+                    data?.cause === "DocspaceApiKeyNotFoundException"
+                  ) {
+                    setAppError(AppErrorType.PLUGIN_NOT_AVAILABLE);
+                    return;
+                  }
+
+                  if (
+                    e?.response?.status === 503 &&
+                    data?.cause === "DocspaceApiKeyInvalidException"
+                  ) {
+                    setAppError(AppErrorType.DOCSPACE_INVALID_API_KEY);
+                    return;
+                  }
+
+                  if (
+                    e?.response?.status === 403 &&
+                    data?.cause === "RequestAccessToRoomException"
+                  ) {
+                    await sdk.execute(Command.SHOW_SNACKBAR, {
+                      message: t(
+                        "room.request-access.forbidden",
+                        "Error getting access to the ONLYOFFICE DocSpace room, because current user is not deal follower.",
+                      ),
+                    });
+                    return;
+                  }
+
                   await sdk.execute(Command.SHOW_SNACKBAR, {
                     message: t(
                       "room.request-access.error",
@@ -200,15 +217,12 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ children }) => {
       }
       case AppErrorType.DOCSPACE_UNREACHABLE: {
         setErrorProps({
-          Icon: <UnreachableError className="mb-5" />,
-          title: t(
-            "docspace.error.unreached",
-            "ONLYOFFICE DocSpace cannot be reached",
-          ),
+          Icon: <NotAvailable />,
+          title: t("background.error.title.unreached", "Cannot be reached"),
           subtitle: `${t(
             "docspace.error.unreached",
-            "ONLYOFFICE DocSpace cannot be reached",
-          )}. 
+            "ONLYOFFICE DocSpace cannot be reached.",
+          )} 
               ${
                 user?.isAdmin
                   ? t(
@@ -220,12 +234,71 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ children }) => {
                       "Please contact the administrator.",
                     )
               }`,
+          button: user?.isAdmin
+            ? {
+                text: t("button.settings", "Go to Settings"),
+                onClick: () =>
+                  sdk.execute(Command.REDIRECT_TO, { view: View.SETTINGS }),
+              }
+            : undefined,
+        });
+        break;
+      }
+      case AppErrorType.DOCSPACE_INVALID_API_KEY: {
+        setErrorProps({
+          Icon: <NotAvailable />,
+          title: t("background.error.title.not-available", "Not yet available"),
+          subtitle: `${t(
+            "background.error.title.docspace-invalid-api-key",
+            "The ONLYOFFICE DocSpace API Key is invalid.",
+          )} ${
+            user?.isAdmin
+              ? t(
+                  "background.error.hint.admin.docspace-connection",
+                  "Please go to the Connection Setting to configure ONLYOFFICE DocSpace app settings.",
+                )
+              : t(
+                  "background.error.hint.docspace-connection",
+                  "Please contact the administrator.",
+                )
+          }`,
           button: {
-            text: t("button.settings", "Settings") || "Settings",
+            text: user?.isAdmin
+              ? t("button.settings", "Go to Settings")
+              : t("button.reload", "Reload"),
             onClick: user?.isAdmin
               ? () => sdk.execute(Command.REDIRECT_TO, { view: View.SETTINGS })
-              : undefined,
+              : () => reloadAppContext(),
           },
+        });
+        break;
+      }
+      case AppErrorType.WEBHOOKS_IS_NOT_INSTALLED: {
+        setErrorProps({
+          Icon: <CommonError />,
+          title: t(
+            "background.error.title.webhook.is-not-installed",
+            "Synchronization warning",
+          ),
+          subtitle: user?.isAdmin
+            ? t(
+                "background.error.hint.webhook.is-not-installed",
+                "The synchronization between Deal followers and Room members is not occurring due to a webhook malfunction.",
+              )
+            : t(
+                "background.error.hint.docspace-connection",
+                "Please contact the administrator.",
+              ),
+          button: user?.isAdmin
+            ? {
+                text: t("button.reinstall", "Reinstall app"),
+                onClick: () =>
+                  window.open(
+                    `${process.env.BACKEND_URL}/oauth2/authorization/pipedrive`,
+                    "_blank",
+                  ),
+              }
+            : undefined,
         });
         break;
       }
@@ -234,7 +307,16 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ children }) => {
         break;
       }
     }
-  }, [sdk, appError, t, user, setAppError, processingRequestAccess]);
+  }, [
+    sdk,
+    pipedriveToken,
+    appError,
+    t,
+    user,
+    setAppError,
+    processingRequestAccess,
+    reloadAppContext,
+  ]);
 
   return (
     <>

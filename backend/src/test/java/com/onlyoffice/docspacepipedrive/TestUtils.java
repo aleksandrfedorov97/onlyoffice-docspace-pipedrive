@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ package com.onlyoffice.docspacepipedrive;
 
 import com.onlyoffice.docspacepipedrive.entity.DocspaceAccount;
 import com.onlyoffice.docspacepipedrive.entity.User;
-import com.onlyoffice.docspacepipedrive.entity.docspaceaccount.DocspaceToken;
 import com.onlyoffice.docspacepipedrive.entity.user.AccessToken;
 import com.onlyoffice.docspacepipedrive.entity.user.RefreshToken;
 
@@ -69,17 +68,6 @@ public final class TestUtils {
                 .email(MessageFormat.format("docspace.user{0}@onlyoffice.com", userId.toString()))
                 .uuid(uuid)
                 .passwordHash("password_hash")
-                .docspaceToken(createDocspaceToken(uuid))
                 .build();
-    }
-
-    public static DocspaceToken createDocspaceToken(final UUID uuid) {
-        Instant now = Instant.now();
-
-        return DocspaceToken.builder()
-                .value(MessageFormat.format("docspace_token_{0}", uuid.toString()))
-                .issuedAt(now)
-                .build();
-
     }
 }

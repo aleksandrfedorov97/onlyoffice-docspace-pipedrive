@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@
 
 package com.onlyoffice.docspacepipedrive.service.impl;
 
+import com.onlyoffice.docspacepipedrive.entity.User;
 import com.onlyoffice.docspacepipedrive.entity.Webhook;
+import com.onlyoffice.docspacepipedrive.exceptions.UserNotFoundException;
 import com.onlyoffice.docspacepipedrive.exceptions.WebhookNotFoundException;
+import com.onlyoffice.docspacepipedrive.repository.UserRepository;
 import com.onlyoffice.docspacepipedrive.repository.WebhookRepository;
 import com.onlyoffice.docspacepipedrive.service.WebhookService;
 import lombok.RequiredArgsConstructor;
@@ -33,8 +36,24 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class WebhookServiceImpl implements WebhookService {
+    private final UserRepository userRepository;
     private final WebhookRepository webhookRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Override
+    public boolean existsByClientIdAndName(final Long clientId, final String name) {
+        return webhookRepository.existsByUser_Client_IdAndName(clientId, name);
+    }
+
+    @Override
+    public List<Webhook> findAllByClientId(final Long clientId) {
+        return webhookRepository.findAllByUser_Client_Id(clientId);
+    }
+
+    @Override
+    public List<Webhook> findAllByClientIdAndUserId(final Long clientId, final Long userId) {
+        return webhookRepository.findAllByUser_Client_IdAndUser_UserId(clientId, userId);
+    }
 
     @Override
     public Webhook findById(final UUID id) {
@@ -43,12 +62,11 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
-    public List<Webhook> findAllByUserId(final Long userId) {
-        return webhookRepository.findAllByUserId(userId);
-    }
+    public Webhook save(final Long clientId, final Long userId, final Webhook webhook) {
+        User user = userRepository.findByClientIdAndUserId(clientId, userId)
+                .orElseThrow(() -> new UserNotFoundException(clientId, userId));
 
-    @Override
-    public Webhook save(final Webhook webhook) {
+        webhook.setUser(user);
         webhook.setPassword(passwordEncoder.encode(webhook.getPassword()));
         return webhookRepository.save(webhook);
     }

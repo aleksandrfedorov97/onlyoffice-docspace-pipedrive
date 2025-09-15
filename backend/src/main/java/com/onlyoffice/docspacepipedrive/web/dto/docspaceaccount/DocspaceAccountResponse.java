@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,5 +30,4 @@ import lombok.NoArgsConstructor;
 public class DocspaceAccountResponse {
     private String userName;
     private String passwordHash;
-    private Boolean canCreateRoom;
 }

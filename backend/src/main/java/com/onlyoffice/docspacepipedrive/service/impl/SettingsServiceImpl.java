@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ package com.onlyoffice.docspacepipedrive.service.impl;
 
 import com.onlyoffice.docspacepipedrive.entity.Client;
 import com.onlyoffice.docspacepipedrive.entity.Settings;
-import com.onlyoffice.docspacepipedrive.exceptions.SettingsNotFoundException;
 import com.onlyoffice.docspacepipedrive.repository.SettingsRepository;
 import com.onlyoffice.docspacepipedrive.service.ClientService;
 import com.onlyoffice.docspacepipedrive.service.SettingsService;
@@ -28,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Objects;
 import java.util.UUID;
 
 
@@ -40,25 +40,30 @@ public class SettingsServiceImpl implements SettingsService {
     @Override
     public Settings findByClientId(final Long clientId) {
         return settingsRepository.findByClientId(clientId)
-                .orElseThrow(() -> new SettingsNotFoundException(clientId));
+                .orElse(new Settings());
     }
 
     @Override
     public Settings put(final Long clientId, final Settings settings) {
-        Client client = clientService.findById(clientId);
+        Settings existedSetting = settingsRepository.findByClientId(clientId)
+                .orElse(null);
 
-        try {
-            Settings existedSetting = findByClientId(clientId);
-
+        if (Objects.nonNull(existedSetting)) {
             if (StringUtils.hasText(settings.getUrl())) {
                 existedSetting.setUrl(settings.getUrl());
             }
 
+            if (Objects.nonNull(settings.getApiKey())) {
+                existedSetting.setApiKey(settings.getApiKey());
+            }
+
             return settingsRepository.save(existedSetting);
-        } catch (SettingsNotFoundException e) {
-            settings.setClient(client);
-            return settingsRepository.save(settings);
         }
+
+        Client client = clientService.findById(clientId);
+        settings.setClient(client);
+
+        return settingsRepository.save(settings);
     }
 
     @Override
@@ -71,11 +76,21 @@ public class SettingsServiceImpl implements SettingsService {
     }
 
     @Override
+    public Settings setApiKeyValid(final Long clientId, final boolean valid) {
+        Settings existedSetting = findByClientId(clientId);
+
+        existedSetting.getApiKey().setValid(valid);
+
+        return settingsRepository.save(existedSetting);
+    }
+
+    @Override
     public void clear(final Long clientId) {
         Settings existedSetting = findByClientId(clientId);
 
         existedSetting.setUrl(null);
         existedSetting.setSharedGroupId(null);
+        existedSetting.setApiKey(null);
 
         settingsRepository.save(existedSetting);
     }

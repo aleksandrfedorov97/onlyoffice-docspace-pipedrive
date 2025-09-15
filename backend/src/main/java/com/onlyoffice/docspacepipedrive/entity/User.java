@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,12 +82,4 @@ public class User {
     @JoinColumn(name = "client_id")
     @ToString.Exclude
     private Client client;
-
-    public boolean isSystemUser() {
-        if (this.client.existSystemUser()) {
-           return this.client.getSystemUser().getId().equals(this.id);
-        }
-
-        return false;
-    }
 }

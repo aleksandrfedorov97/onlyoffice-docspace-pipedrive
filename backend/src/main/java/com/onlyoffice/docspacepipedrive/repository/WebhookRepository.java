@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,5 +28,7 @@ import java.util.UUID;
 
 @Repository
 public interface WebhookRepository extends JpaRepository<Webhook, UUID> {
-    List<Webhook> findAllByUserId(Long userId);
+    Boolean existsByUser_Client_IdAndName(Long clientId, String name);
+    List<Webhook> findAllByUser_Client_Id(Long clientId);
+    List<Webhook> findAllByUser_Client_IdAndUser_UserId(Long clientId, Long userId);
 }

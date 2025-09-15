@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,58 +18,34 @@
 
 package com.onlyoffice.docspacepipedrive.web.controller;
 
-import com.onlyoffice.docspacepipedrive.exceptions.DocspaceAccessDeniedException;
 import com.onlyoffice.docspacepipedrive.exceptions.DocspaceAccountAlreadyExistsException;
-import com.onlyoffice.docspacepipedrive.exceptions.DocspaceAuthorizationException;
+import com.onlyoffice.docspacepipedrive.exceptions.DocspaceApiKeyInvalidException;
+import com.onlyoffice.docspacepipedrive.exceptions.DocspaceApiKeyNotFoundException;
 import com.onlyoffice.docspacepipedrive.exceptions.DocspaceUrlNotFoundException;
 import com.onlyoffice.docspacepipedrive.exceptions.DocspaceWebClientResponseException;
-import com.onlyoffice.docspacepipedrive.exceptions.PipedriveAccessDeniedException;
 import com.onlyoffice.docspacepipedrive.exceptions.PipedriveOAuth2AuthorizationException;
 import com.onlyoffice.docspacepipedrive.exceptions.PipedriveWebClientResponseException;
-import com.onlyoffice.docspacepipedrive.exceptions.RoomNotFoundException;
-import com.onlyoffice.docspacepipedrive.exceptions.SystemUserNotFoundException;
+import com.onlyoffice.docspacepipedrive.exceptions.RequestAccessToRoomException;
+import com.onlyoffice.docspacepipedrive.exceptions.SettingsValidationException;
 import com.onlyoffice.docspacepipedrive.web.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class ExceptionHandlerController {
-    @ExceptionHandler(RoomNotFoundException.class)
-    public ResponseEntity<ErrorResponse> entityNotFound(RoomNotFoundException e) {
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(
-                        new ErrorResponse(
-                                HttpStatus.NOT_FOUND.value(),
-                                e.getLocalizedMessage(),
-                                ErrorResponse.Provider.INTEGRATION_APP
-                        )
-                );
-    }
-
     @ExceptionHandler(PipedriveWebClientResponseException.class)
     public ResponseEntity<ErrorResponse> pipedriveWebClientResponseException(PipedriveWebClientResponseException e) {
         return ResponseEntity.status(e.getStatusCode())
                 .body(
                         new ErrorResponse(
-                                e.getStatusCode().value(),
+                                PipedriveWebClientResponseException.class.getSimpleName(),
                                 e.getLocalizedMessage(),
-                                ErrorResponse.Provider.PIPEDRIVE
-                        )
-                );
-    }
-
-    @ExceptionHandler(PipedriveAccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> pipedriveAccessDeniedException(PipedriveAccessDeniedException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(
-                        new ErrorResponse(
-                                HttpStatus.FORBIDDEN.value(),
-                                e.getLocalizedMessage(),
-                                ErrorResponse.Provider.PIPEDRIVE
+                                null
                         )
                 );
     }
@@ -80,9 +56,9 @@ public class ExceptionHandlerController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(
                         new ErrorResponse(
-                                HttpStatus.UNAUTHORIZED.value(),
+                                PipedriveOAuth2AuthorizationException.class.getSimpleName(),
                                 e.getLocalizedMessage(),
-                                ErrorResponse.Provider.PIPEDRIVE
+                                null
                         )
                 );
     }
@@ -92,45 +68,21 @@ public class ExceptionHandlerController {
         return ResponseEntity.status(e.getStatusCode())
                 .body(
                         new ErrorResponse(
-                                e.getStatusCode().value(),
+                                DocspaceWebClientResponseException.class.getSimpleName(),
                                 e.getLocalizedMessage(),
-                                ErrorResponse.Provider.DOCSPACE
-                        )
-                );
-    }
-
-    @ExceptionHandler(DocspaceAccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> docspaceAccessDeniedException(DocspaceAccessDeniedException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(
-                        new ErrorResponse(
-                                HttpStatus.FORBIDDEN.value(),
-                                e.getLocalizedMessage(),
-                                ErrorResponse.Provider.DOCSPACE
-                        )
-                );
-    }
-
-    @ExceptionHandler(SystemUserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> systemUserNotFoundException(SystemUserNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(
-                        new ErrorResponse(
-                                HttpStatus.FORBIDDEN.value(),
-                                e.getLocalizedMessage(),
-                                ErrorResponse.Provider.INTEGRATION_APP
+                                null
                         )
                 );
     }
 
     @ExceptionHandler(DocspaceUrlNotFoundException.class)
     public ResponseEntity<ErrorResponse> docspaceUrlNotFoundException(DocspaceUrlNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(
                         new ErrorResponse(
-                                HttpStatus.FORBIDDEN.value(),
+                                DocspaceUrlNotFoundException.class.getSimpleName(),
                                 e.getLocalizedMessage(),
-                                ErrorResponse.Provider.INTEGRATION_APP
+                                null
                         )
                 );
     }
@@ -140,21 +92,63 @@ public class ExceptionHandlerController {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(
                         new ErrorResponse(
-                                HttpStatus.FORBIDDEN.value(),
+                                DocspaceAccountAlreadyExistsException.class.getSimpleName(),
                                 e.getLocalizedMessage(),
-                                ErrorResponse.Provider.INTEGRATION_APP
+                                null
                         )
                 );
     }
 
-    @ExceptionHandler(DocspaceAuthorizationException.class)
-    public ResponseEntity<ErrorResponse> docspaceAuthorizationException(DocspaceAuthorizationException e) {
+    @ExceptionHandler(SettingsValidationException.class)
+    public ResponseEntity<ErrorResponse> settingsValidationException(
+            SettingsValidationException e) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("validationError", e.getErrorCode().toString());
+        params.put("validationMessage", e.getErrorCode().getMessage());
+        params.putAll(e.getParams());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(
+                        new ErrorResponse(
+                                SettingsValidationException.class.getSimpleName(),
+                                e.getMessage(),
+                                params
+                        )
+                );
+    }
+
+    @ExceptionHandler(DocspaceApiKeyNotFoundException.class)
+    public ResponseEntity<ErrorResponse> docspaceApiKeyNotFoundException(DocspaceApiKeyNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(
+                        new ErrorResponse(
+                                DocspaceApiKeyNotFoundException.class.getSimpleName(),
+                                e.getLocalizedMessage(),
+                                null
+                        )
+                );
+    }
+
+    @ExceptionHandler(DocspaceApiKeyInvalidException.class)
+    public ResponseEntity<ErrorResponse> docspaceApiKeyInvalidException(DocspaceApiKeyInvalidException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(
+                        new ErrorResponse(
+                                DocspaceApiKeyInvalidException.class.getSimpleName(),
+                                e.getLocalizedMessage(),
+                                null
+                        )
+                );
+    }
+
+    @ExceptionHandler(RequestAccessToRoomException.class)
+    public ResponseEntity<ErrorResponse> requestAccessToRoomException(RequestAccessToRoomException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(
                         new ErrorResponse(
-                                HttpStatus.FORBIDDEN.value(),
+                                RequestAccessToRoomException.class.getSimpleName(),
                                 e.getLocalizedMessage(),
-                                ErrorResponse.Provider.INTEGRATION_APP
+                                null
                         )
                 );
     }

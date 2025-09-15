@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ package com.onlyoffice.docspacepipedrive.web.controller;
 
 import com.onlyoffice.docspacepipedrive.AbstractControllerTest;
 import com.onlyoffice.docspacepipedrive.entity.Client;
-import com.onlyoffice.docspacepipedrive.exceptions.DocspaceUrlNotFoundException;
-import com.onlyoffice.docspacepipedrive.exceptions.PipedriveAccessDeniedException;
 import com.onlyoffice.docspacepipedrive.exceptions.SharedGroupIdNotFoundException;
 import com.onlyoffice.docspacepipedrive.web.dto.settings.SettingsRequest;
 import com.onlyoffice.docspacepipedrive.web.dto.settings.SettingsResponse;
@@ -30,10 +28,7 @@ import net.javacrumbs.jsonunit.JsonAssert;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -59,7 +54,9 @@ public class SettingsControllerTest extends AbstractControllerTest {
         String expectedResponse = objectMapper.writeValueAsString(
                 new SettingsResponse(
                         WIREMOCK_DOCSPACE_SERVER.baseUrl(),
-                        true
+                        "sk-***test",
+                        true,
+                        false
                 )
         );
 
@@ -82,8 +79,10 @@ public class SettingsControllerTest extends AbstractControllerTest {
 
         String expectedResponse = objectMapper.writeValueAsString(
             new SettingsResponse(
-                "",
-                true
+                null,
+                null,
+                false,
+                false
             )
         );
 
@@ -92,7 +91,10 @@ public class SettingsControllerTest extends AbstractControllerTest {
 
     @Test
     public void whenPutSetting_thenReturnOk() throws Exception {
-        SettingsRequest settingsRequest = new SettingsRequest("https://docspace.onlyoffice.com");
+        SettingsRequest settingsRequest = new SettingsRequest(
+                WIREMOCK_DOCSPACE_SERVER.baseUrl(),
+                "sk-api-key-test"
+        );
 
         String actualResponse = mockMvc.perform(put("/api/v1/settings")
                         .header("Authorization",
@@ -108,7 +110,9 @@ public class SettingsControllerTest extends AbstractControllerTest {
 
         String expectedResponse = objectMapper.writeValueAsString(
                 new SettingsResponse(
-                        "https://docspace.onlyoffice.com",
+                        WIREMOCK_DOCSPACE_SERVER.baseUrl(),
+                        "sk-***test",
+                        true,
                         true
                 )
         );
@@ -118,25 +122,19 @@ public class SettingsControllerTest extends AbstractControllerTest {
 
     @Test
     public void whenPostSetting_notSalesAdmin_thenReturnForbidden() throws Exception {
-        SettingsRequest settingsRequest = new SettingsRequest("https://docspace.onlyoffice.com");
+        SettingsRequest settingsRequest = new SettingsRequest(
+                WIREMOCK_DOCSPACE_SERVER.baseUrl(),
+                "sk-api-key-test"
+        );
 
-        String response = mockMvc.perform(put("/api/v1/settings")
+        mockMvc.perform(put("/api/v1/settings")
                         .header("Authorization",
                                 getAuthorizationHeaderForUser(testUserNotSalesAdmin)
                         )
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(objectMapper.writeValueAsString(settingsRequest))
                 )
-                .andExpect(status().isForbidden())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
-        assertEquals(
-                responseMap.get("message"),
-                new PipedriveAccessDeniedException(testUserNotSalesAdmin.getUserId()).getMessage()
-        );
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -150,27 +148,17 @@ public class SettingsControllerTest extends AbstractControllerTest {
 
         Client client = clientService.findById(testClient.getId());
 
-        assertThrows(DocspaceUrlNotFoundException.class, () -> client.getSettings().getUrl());
+        assertNull(client.getSettings().getUrl());
         assertThrows(SharedGroupIdNotFoundException.class, () -> client.getSettings().getSharedGroupId());
-        assertFalse(client.existSystemUser());
     }
 
     @Test
     public void whenDeleteSetting_notSalesAdmin_thenReturnForbidden() throws Exception {
-        String response = mockMvc.perform(delete("/api/v1/settings")
+        mockMvc.perform(delete("/api/v1/settings")
                         .header("Authorization",
                                 getAuthorizationHeaderForUser(testUserNotSalesAdmin)
                         )
                 )
-                .andExpect(status().isForbidden())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
-        assertEquals(
-                responseMap.get("message"),
-                new PipedriveAccessDeniedException(testUserNotSalesAdmin.getUserId()).getMessage()
-        );
+                .andExpect(status().isForbidden());
     }
 }

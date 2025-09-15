@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.onlyoffice.docspacepipedrive.service.ClientService;
 import com.onlyoffice.docspacepipedrive.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -61,5 +62,11 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public void deleteAllByClientId(final Long clientId) {
         roomRepository.deleteAllByClientId(clientId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteByClientIdAndDealId(final Long clientId, final Long dealId) {
+        roomRepository.deleteByClientIdAndDealId(clientId, dealId);
     }
 }

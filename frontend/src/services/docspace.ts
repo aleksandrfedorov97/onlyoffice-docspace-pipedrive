@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,16 @@
  */
 
 import axios from "axios";
-import axiosRetry from "axios-retry";
-import { CSPSettings, DocspaceResponse } from "src/types/docspace";
 
-export const getCSPSettings = async (url: string) => {
+export const getSettings = async (url: string) => {
   const client = axios.create({ baseURL: url });
-  axiosRetry(client, {
-    retries: 2,
-    retryCondition: (error) => error.status !== 200,
-    retryDelay: (count) => count * 50,
-    shouldResetTimeout: true,
-  });
 
-  const response = await client<DocspaceResponse<CSPSettings>>({
+  await client({
     method: "GET",
-    url: `/api/2.0/security/csp`,
+    url: "/api/2.0/settings",
     headers: {
       "Content-Type": "application/json",
     },
     timeout: 10000,
   });
-
-  return response.data.response;
 };

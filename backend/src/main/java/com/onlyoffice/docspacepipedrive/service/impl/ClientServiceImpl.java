@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,20 +62,7 @@ public class ClientServiceImpl implements ClientService {
             existedClient.setCompanyName(client.getCompanyName());
         }
 
-        if (client.existSystemUser()) {
-            existedClient.setSystemUser(client.getSystemUser());
-        }
-
         return clientRepository.save(existedClient);
-    }
-
-    @Override
-    public void unsetSystemUser(final Long clientId) {
-        Client client = findById(clientId);
-
-        client.setSystemUser(null);
-
-        clientRepository.save(client);
     }
 
     @Override

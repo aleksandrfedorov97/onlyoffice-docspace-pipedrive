@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,35 @@
 
 package com.onlyoffice.docspacepipedrive.configuration;
 
-import com.onlyoffice.docspacepipedrive.client.docspace.filter.DocspaceAuthorizationExchangeFilterFunction;
-import com.onlyoffice.docspacepipedrive.service.DocspaceAccountService;
+import com.onlyoffice.docspacepipedrive.client.docspace.DocspaceClient;
+import com.onlyoffice.docspacepipedrive.client.docspace.filter.DocspaceAuthorizationApiKeyExchangeFilterFunction;
+import com.onlyoffice.docspacepipedrive.client.docspace.impl.DocspaceClientImpl;
+import com.onlyoffice.docspacepipedrive.service.SettingsService;
+import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
 
 @Configuration
+@AllArgsConstructor
 public class ClientConfiguration {
-    @Bean
-    WebClient docspaceWebClient(final DocspaceAccountService docspaceAccountService) {
-        DocspaceAuthorizationExchangeFilterFunction docspaceAuthorizationExchangeFilterFunction =
-                new DocspaceAuthorizationExchangeFilterFunction(docspaceAccountService);
+    private final SettingsService settingsService;
 
-        return WebClient.builder()
-                .filter(docspaceAuthorizationExchangeFilterFunction)
+    @Bean
+    DocspaceClient docspaceClient() {
+        DocspaceAuthorizationApiKeyExchangeFilterFunction docspaceAuthorizationApiKeyExchangeFilterFunction =
+                new DocspaceAuthorizationApiKeyExchangeFilterFunction(settingsService);
+
+        WebClient webClient = WebClient.builder()
+                .defaultHeaders(headers -> headers.setContentType(MediaType.APPLICATION_JSON))
+                .filter(docspaceAuthorizationApiKeyExchangeFilterFunction)
                 .build();
+
+        return new DocspaceClientImpl(webClient);
     }
 
     @Bean

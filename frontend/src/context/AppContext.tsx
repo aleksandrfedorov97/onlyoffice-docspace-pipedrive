@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,12 @@ import { AxiosError } from "axios";
 import { OnlyofficeSpinner } from "@components/spinner";
 
 import { getUser } from "@services/user";
-import { getSettings } from "@services/settings";
+import { getSettings, validateApiKey } from "@services/settings";
 
 import { UserResponse } from "src/types/user";
 import { SettingsResponse } from "src/types/settings";
+import { PipedriveToken } from "@context/PipedriveToken";
+import { useLocation } from "react-router-dom";
 
 type AppContextProps = {
   children?: JSX.Element | JSX.Element[];
@@ -38,15 +40,16 @@ export enum AppErrorType {
   COMMON_ERROR,
   TOKEN_ERROR,
   PLUGIN_NOT_AVAILABLE,
-  DOCSPACE_CONNECTION,
-  DOCSPACE_AUTHORIZATION,
   DOCSPACE_ROOM_NOT_FOUND,
   DOCSPACE_UNREACHABLE,
+  DOCSPACE_INVALID_API_KEY,
   DOCSPACE_ROOM_NO_ACCESS,
+  WEBHOOKS_IS_NOT_INSTALLED,
 }
 
 export interface IAppContext {
   sdk: AppExtensionsSDK;
+  pipedriveToken: PipedriveToken;
   user: UserResponse | undefined;
   setUser: (value: UserResponse) => void;
   settings: SettingsResponse | undefined;
@@ -59,7 +62,9 @@ export interface IAppContext {
 export const AppContext = React.createContext<IAppContext>({} as IAppContext);
 
 export const AppContextProvider: React.FC<AppContextProps> = ({ children }) => {
+  const location = useLocation();
   const [sdk, setSDK] = useState<AppExtensionsSDK>();
+  const [pipedriveToken, setPipedriveToken] = useState<PipedriveToken>();
   const [user, setUser] = useState<UserResponse>();
   const [settings, setSettings] = useState<SettingsResponse>();
   const [loading, setLoading] = useState(true);
@@ -69,11 +74,13 @@ export const AppContextProvider: React.FC<AppContextProps> = ({ children }) => {
   const appContextProviderValue = useMemo(() => {
     const reloadAppContext = () => {
       setReload(!reload);
+      setAppError(undefined);
       setLoading(true);
     };
 
     return {
       sdk,
+      pipedriveToken,
       user,
       setUser,
       settings,
@@ -84,6 +91,7 @@ export const AppContextProvider: React.FC<AppContextProps> = ({ children }) => {
     } as IAppContext;
   }, [
     sdk,
+    pipedriveToken,
     user,
     setUser,
     settings,
@@ -99,23 +107,40 @@ export const AppContextProvider: React.FC<AppContextProps> = ({ children }) => {
       .then(async (s) => {
         setSDK(s);
         try {
-          const userResponse = await getUser(s);
-          const settingsResponse = await getSettings(s);
+          const pipedriveTokenObject = new PipedriveToken(s);
+          const userResponse = await getUser(pipedriveTokenObject);
+          let settingsResponse = await getSettings(pipedriveTokenObject);
 
           await i18next.changeLanguage(
             `${userResponse.language.language_code}-${userResponse.language.country_code}`,
           );
 
-          if (
-            !userResponse?.isAdmin &&
-            (!settingsResponse?.url || !settingsResponse.existSystemUser) &&
-            !userResponse?.docspaceAccount
-          ) {
-            setAppError(AppErrorType.PLUGIN_NOT_AVAILABLE);
+          if (settingsResponse.apiKey && !settingsResponse.isApiKeyValid) {
+            try {
+              settingsResponse = await validateApiKey(pipedriveTokenObject);
+            } catch (e) {
+              if (e instanceof AxiosError && e?.response?.status !== 400) {
+                throw e;
+              }
+            }
+          }
+
+          if (location.pathname !== "/settings") {
+            if (!settingsResponse?.url || !settingsResponse.apiKey) {
+              setAppError(AppErrorType.PLUGIN_NOT_AVAILABLE);
+            } else if (
+              settingsResponse.apiKey &&
+              !settingsResponse.isApiKeyValid
+            ) {
+              setAppError(AppErrorType.DOCSPACE_INVALID_API_KEY);
+            } else if (!settingsResponse.isWebhooksInstalled) {
+              setAppError(AppErrorType.WEBHOOKS_IS_NOT_INSTALLED);
+            }
           }
 
           setUser(userResponse);
           setSettings(settingsResponse);
+          setPipedriveToken(pipedriveTokenObject);
         } catch (e) {
           if (e instanceof AxiosError && e?.response?.status === 401) {
             setAppError(AppErrorType.TOKEN_ERROR);
@@ -130,7 +155,7 @@ export const AppContextProvider: React.FC<AppContextProps> = ({ children }) => {
         // eslint-disable-next-line no-console
         (e) => console.error(e),
       );
-  }, [reload]);
+  }, [reload, location]);
 
   return (
     <>

@@ -6,7 +6,7 @@
     "Ascensio System SIA <integration@onlyoffice.com> (https://www.onlyoffice.com)"
   ],
   "license": "Apache-2.0",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "repository": {
     "type": "git",
@@ -77,14 +77,15 @@
     "ts-jest": "^29.2.4",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4",
+    "typescript": "5.5.4",
     "webpack": "^5.74.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.0.4",
     "webpack-merge": "^6.0.1"
   },
   "dependencies": {
-    "@onlyoffice/docspace-react": "1.0.0",
+    "@onlyoffice/docspace-react": "^2.1.0",
+    "@onlyoffice/docspace-sdk-js": "^2.0.0",
     "@pipedrive/app-extensions-sdk": "^0.10.2",
     "axios": "^1.7.3",
     "axios-retry": "^4.5.0",
@@ -94,10 +95,14 @@
     "i18next-chained-backend": "^4.6.2",
     "i18next-http-backend": "^2.5.2",
     "i18next-localstorage-backend": "^4.2.0",
+    "jwt-decode": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^15.0.1",
     "react-query": "^3.39.3",
     "react-router-dom": "^6.26.0"
+  },
+  "overrides": {
+    "pnpm": "10.14.0"
   }
 }

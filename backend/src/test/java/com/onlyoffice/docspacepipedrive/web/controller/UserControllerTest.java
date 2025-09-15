@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,23 +20,17 @@ package com.onlyoffice.docspacepipedrive.web.controller;
 
 import com.onlyoffice.docspacepipedrive.AbstractControllerTest;
 import com.onlyoffice.docspacepipedrive.client.pipedrive.dto.PipedriveUser;
-import com.onlyoffice.docspacepipedrive.entity.Client;
-import com.onlyoffice.docspacepipedrive.entity.User;
-import com.onlyoffice.docspacepipedrive.exceptions.DocspaceAccessDeniedException;
-import com.onlyoffice.docspacepipedrive.exceptions.DocspaceUrlNotFoundException;
-import com.onlyoffice.docspacepipedrive.exceptions.PipedriveAccessDeniedException;
-import com.onlyoffice.docspacepipedrive.exceptions.SystemUserNotFoundException;
+import com.onlyoffice.docspacepipedrive.exceptions.DocspaceApiKeyNotFoundException;
 import com.onlyoffice.docspacepipedrive.web.dto.docspaceaccount.DocspaceAccountRequest;
 import com.onlyoffice.docspacepipedrive.web.dto.docspaceaccount.DocspaceAccountResponse;
-import com.onlyoffice.docspacepipedrive.web.dto.user.UserResponse;
 import lombok.extern.slf4j.Slf4j;
-import net.javacrumbs.jsonunit.JsonAssert;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -47,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserControllerTest extends AbstractControllerTest {
     @Test
     public void whenGetUser_thenReturnOk() throws Exception {
-        String actualResponse = mockMvc.perform(get("/api/v1/user")
+        String response = mockMvc.perform(get("/api/v1/user")
                         .header("Authorization",
                                 getAuthorizationHeaderForUser(testUserSalesAdmin)
                         )
@@ -57,109 +51,33 @@ public class UserControllerTest extends AbstractControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        String expectedResponse = objectMapper.writeValueAsString(
-                new UserResponse(10000L, "Test User 10000", true, true,
-                        new PipedriveUser.Language("en", "US"),
-                        new DocspaceAccountResponse(
-                                testDocspaceAccount.getEmail(),
-                                testDocspaceAccount.getPasswordHash(),
-                                true
+        Map<String, Object> actualResponse = objectMapper.readValue(response, Map.class);
+
+        Map<String, Object> expectedResponse = objectMapper.readValue(
+                objectMapper.writeValueAsString(
+                    Map.of(
+                    "id", 10000,
+                    "name", "Test User 10000",
+                    "isAdmin", true,
+                    "language", new PipedriveUser.Language("en", "US"),
+                    "docspaceAccount", new DocspaceAccountResponse(
+                            testDocspaceAccount.getEmail(),
+                            testDocspaceAccount.getPasswordHash()
                         )
-                )
+                    )
+                ), Map.class
         );
 
-        JsonAssert.assertJsonEquals(expectedResponse, actualResponse);
-    }
-
-    @Test
-    public void whenPutSystemDocspaceAccount_thenReturnOk() throws Exception {
-        docspaceAccountService.deleteById(testDocspaceAccount.getUserId());
-
-        DocspaceAccountRequest docspaceAccountRequest = new DocspaceAccountRequest(
-                "docspace.user1@onlyoffice.com",
-                "password_hash"
-        );
-
-        mockMvc.perform(put("/api/v1/user/docspace-account")
-                        .queryParam("system", "true")
-                        .header("Authorization",
-                                getAuthorizationHeaderForUser(testUserSalesAdmin)
-                        )
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .content(objectMapper.writeValueAsString(docspaceAccountRequest))
-                )
-                .andExpect(status().isOk());
-
-        User user = userService.findById(testUserSalesAdmin.getId());
-        assertEquals(user.getDocspaceAccount().getEmail(), docspaceAccountRequest.getUserName());
-        assertEquals(user.getDocspaceAccount().getPasswordHash(), docspaceAccountRequest.getPasswordHash());
-
-        Client client = clientService.findById(testUserSalesAdmin.getClient().getId());
-
-        assertEquals(client.getSystemUser().getId(), user.getId());
-    }
-
-    @Test
-    public void whenPutSystemDocspaceAccount_NotSalesAdmin_thenReturnForbidden() throws Exception {
-        DocspaceAccountRequest docspaceAccountRequest = new DocspaceAccountRequest(
-                "docspace.user1@onlyoffice.com",
-                "password_hash"
-        );
-
-        String response = mockMvc.perform(put("/api/v1/user/docspace-account")
-                        .queryParam("system", "true")
-                        .header("Authorization",
-                                getAuthorizationHeaderForUser(testUserNotSalesAdmin)
-                        )
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .content(objectMapper.writeValueAsString(docspaceAccountRequest))
-                )
-                .andExpect(status().isForbidden())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-
-        Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
-        assertEquals(
-                responseMap.get("message"),
-                new PipedriveAccessDeniedException(testUserNotSalesAdmin.getUserId()).getMessage()
-        );
-    }
-
-    @Test
-    public void whenPutSystemDocspaceAccount_NotDocspaceAdmin_thenReturnForbidden() throws Exception {
-        docspaceAccountService.deleteById(testDocspaceAccount.getUserId());
-
-        DocspaceAccountRequest docspaceAccountRequest = new DocspaceAccountRequest(
-                "docspace.user2@onlyoffice.com",
-                "password_hash"
-        );
-
-        String response = mockMvc.perform(put("/api/v1/user/docspace-account")
-                        .queryParam("system", "true")
-                        .header("Authorization",
-                                getAuthorizationHeaderForUser(testUserSalesAdmin)
-                        )
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .content(objectMapper.writeValueAsString(docspaceAccountRequest))
-                )
-                .andExpect(status().isForbidden())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-
-        Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
-        assertEquals(
-                responseMap.get("message"),
-                new DocspaceAccessDeniedException("docspace.user2@onlyoffice.com").getMessage()
-        );
+        for (Map.Entry<String, Object> entry : expectedResponse.entrySet()) {
+            assertTrue(actualResponse.containsKey(entry.getKey()));
+            assertEquals(entry.getValue(), actualResponse.get(entry.getKey()));
+        }
     }
 
     @Test
     public void whenPutAlreadyExistsDocspaceAccount_thenReturnForbidden() throws Exception {
         DocspaceAccountRequest docspaceAccountRequest = new DocspaceAccountRequest(
+                "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
                 "docspace.user1@onlyoffice.com",
                 "password_hash"
         );
@@ -176,40 +94,11 @@ public class UserControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    public void whenPutDocspaceAccountWithoutSystemUser_thenReturnForbidden() throws Exception {
-        clientService.unsetSystemUser(testClient.getId());
-
-        DocspaceAccountRequest docspaceAccountRequest = new DocspaceAccountRequest(
-                "docspace.user1@onlyoffice.com",
-                "password_hash"
-        );
-
-        String response = mockMvc.perform(put("/api/v1/user/docspace-account")
-                        .queryParam("system", "false")
-                        .header("Authorization",
-                                getAuthorizationHeaderForUser(testUserNotSalesAdmin)
-                        )
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .content(objectMapper.writeValueAsString(docspaceAccountRequest))
-                )
-                .andExpect(status().isForbidden())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
-        assertEquals(
-                responseMap.get("message"),
-                new SystemUserNotFoundException().getMessage()
-        );
-
-    }
-
-    @Test
     public void whenPutDocspaceAccountWithoutSettings_thenReturnForbidden() throws Exception {
         settingsService.clear(testClient.getId());
 
         DocspaceAccountRequest docspaceAccountRequest = new DocspaceAccountRequest(
+                "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2",
                 "docspace.user2@onlyoffice.com",
                 "password_hash"
         );
@@ -222,7 +111,7 @@ public class UserControllerTest extends AbstractControllerTest {
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(objectMapper.writeValueAsString(docspaceAccountRequest))
                 )
-                .andExpect(status().isForbidden())
+                .andExpect(status().isServiceUnavailable())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -230,7 +119,7 @@ public class UserControllerTest extends AbstractControllerTest {
         Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
         assertEquals(
                 responseMap.get("message"),
-                new DocspaceUrlNotFoundException(testClient.getId()).getMessage()
+                new DocspaceApiKeyNotFoundException(testClient.getId()).getMessage()
         );
     }
 

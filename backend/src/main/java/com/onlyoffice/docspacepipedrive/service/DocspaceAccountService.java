@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,16 @@
 package com.onlyoffice.docspacepipedrive.service;
 
 import com.onlyoffice.docspacepipedrive.entity.DocspaceAccount;
-import com.onlyoffice.docspacepipedrive.entity.docspaceaccount.DocspaceToken;
 
 import java.util.List;
 
 
 public interface DocspaceAccountService {
+    List<DocspaceAccount> findAllByClientIdAndUserIds(Long clientId, List<Long> userIds);
     DocspaceAccount findById(Long id);
-    DocspaceAccount save(Long id, DocspaceAccount docspaceAccount);
-    DocspaceToken saveToken(Long id, String value);
-    void deleteById(Long id);
+    DocspaceAccount findByClientIdAndUserId(Long clientId, Long userId);
+    DocspaceAccount save(Long clientId, Long userId, DocspaceAccount docspaceAccount);
+    void deleteAllByClientId(Long clientId);
+    void deleteByClientIdAndUserId(Long clientId, Long userId);
     void deleteAllByIdInBatch(List<Long> ids);
 }

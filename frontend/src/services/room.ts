@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,21 @@
 
 import axios from "axios";
 import axiosRetry from "axios-retry";
-import AppExtensionsSDK, { Command } from "@pipedrive/app-extensions-sdk";
 
 import { RoomResponse } from "src/types/room";
+import { PipedriveToken } from "@context/PipedriveToken";
 
-export const getRoom = async (sdk: AppExtensionsSDK, dealId: number) => {
-  const pctx = await sdk.execute(Command.GET_SIGNED_TOKEN);
+export const getRoom = async (
+  pipedriveToken: PipedriveToken,
+  dealId: number,
+) => {
+  const token = await pipedriveToken.getValue();
   const client = axios.create({ baseURL: process.env.BACKEND_URL });
   axiosRetry(client, {
     retries: 2,
-    retryCondition: (error) => error.status !== 200,
+    retryCondition: (error) =>
+      axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+      (error.response?.status !== undefined && error.response.status >= 500),
     retryDelay: (count) => count * 50,
     shouldResetTimeout: true,
   });
@@ -37,7 +42,7 @@ export const getRoom = async (sdk: AppExtensionsSDK, dealId: number) => {
     url: `/api/v1/room/${dealId}`,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${pctx.token}`,
+      Authorization: `Bearer ${token}`,
     },
     timeout: 10000,
   });
@@ -45,8 +50,12 @@ export const getRoom = async (sdk: AppExtensionsSDK, dealId: number) => {
   return response.data;
 };
 
-export const createRoom = async (sdk: AppExtensionsSDK, dealId: number) => {
-  const pctx = await sdk.execute(Command.GET_SIGNED_TOKEN);
+export const postRoom = async (
+  pipedriveToken: PipedriveToken,
+  dealId: number,
+  roomId: string,
+) => {
+  const token = await pipedriveToken.getValue();
   const client = axios.create({ baseURL: process.env.BACKEND_URL });
 
   const response = await client<RoomResponse>({
@@ -54,7 +63,10 @@ export const createRoom = async (sdk: AppExtensionsSDK, dealId: number) => {
     url: `/api/v1/room/${dealId}`,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${pctx.token}`,
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      roomId,
     },
     timeout: 30000,
   });
@@ -63,27 +75,39 @@ export const createRoom = async (sdk: AppExtensionsSDK, dealId: number) => {
 };
 
 export const requestAccessToRoom = async (
-  sdk: AppExtensionsSDK,
+  pipedriveToken: PipedriveToken,
   dealId: number,
 ) => {
-  const pctx = await sdk.execute(Command.GET_SIGNED_TOKEN);
+  const token = await pipedriveToken.getValue();
   const client = axios.create({ baseURL: process.env.BACKEND_URL });
-  axiosRetry(client, {
-    retries: 1,
-    retryCondition: (error) => error.status === 429,
-    retryDelay: (count) => count * 50,
-    shouldResetTimeout: true,
-  });
 
   const response = await client<RoomResponse>({
     method: "POST",
     url: `/api/v1/room/${dealId}/request-access`,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${pctx.token}`,
+      Authorization: `Bearer ${token}`,
     },
     timeout: 15000,
   });
 
   return response.data;
+};
+
+export const deleteRoom = async (
+  pipedriveToken: PipedriveToken,
+  dealId: number,
+) => {
+  const token = await pipedriveToken.getValue();
+  const client = axios.create({ baseURL: process.env.BACKEND_URL });
+
+  await client<RoomResponse>({
+    method: "DELETE",
+    url: `/api/v1/room/${dealId}`,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    timeout: 10000,
+  });
 };

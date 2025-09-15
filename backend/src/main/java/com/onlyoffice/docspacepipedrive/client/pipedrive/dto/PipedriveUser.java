@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public class PipedriveUser {
     private List<Access> access;
     private String companyDomain;
     private String companyName;
+    private Boolean activeFlag;
 
     public Boolean isSalesAdmin() {
         return getAccess().stream()

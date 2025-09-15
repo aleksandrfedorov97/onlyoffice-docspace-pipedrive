@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@
 
 package com.onlyoffice.docspacepipedrive.entity;
 
-import com.onlyoffice.docspacepipedrive.exceptions.DocspaceUrlNotFoundException;
+import com.onlyoffice.docspacepipedrive.entity.settings.ApiKey;
 import com.onlyoffice.docspacepipedrive.exceptions.SharedGroupIdNotFoundException;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -48,17 +51,18 @@ public class Settings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String url;
+    @AttributeOverrides({
+            @AttributeOverride(name = "value", column = @Column(name = "api_key_value")),
+            @AttributeOverride(name = "ownerId", column = @Column(name = "api_key_owner_id")),
+            @AttributeOverride(name = "valid", column = @Column(name = "api_key_valid"))
+    })
+    private ApiKey apiKey;
     private UUID sharedGroupId;
     @OneToOne
     @JoinColumn(name = "client_id")
     @ToString.Exclude
     private Client client;
 
-    public String getUrl() {
-        return Optional.ofNullable(url).orElseThrow(
-                () -> new DocspaceUrlNotFoundException(this.client.getId())
-        );
-    }
     public UUID getSharedGroupId() {
         return Optional.ofNullable(sharedGroupId).orElseThrow(
                 () -> new SharedGroupIdNotFoundException(this.client.getId())

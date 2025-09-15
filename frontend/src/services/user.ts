@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,18 @@
 
 import axios from "axios";
 import axiosRetry from "axios-retry";
-import AppExtensionsSDK, { Command } from "@pipedrive/app-extensions-sdk";
 
 import { UserResponse } from "src/types/user";
+import { PipedriveToken } from "@context/PipedriveToken";
 
-export const getUser = async (sdk: AppExtensionsSDK) => {
-  const pctx = await sdk.execute(Command.GET_SIGNED_TOKEN);
+export const getUser = async (pipedriveToken: PipedriveToken) => {
+  const token = await pipedriveToken.getValue();
   const client = axios.create({ baseURL: process.env.BACKEND_URL });
   axiosRetry(client, {
     retries: 2,
-    retryCondition: (error) => error.status !== 200,
+    retryCondition: (error) =>
+      axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+      (error.response?.status !== undefined && error.response.status >= 500),
     retryDelay: (count) => count * 50,
     shouldResetTimeout: true,
   });
@@ -37,7 +39,7 @@ export const getUser = async (sdk: AppExtensionsSDK) => {
     url: `/api/v1/user`,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${pctx.token}`,
+      Authorization: `Bearer ${token}`,
     },
     timeout: 15000,
   });
@@ -46,28 +48,23 @@ export const getUser = async (sdk: AppExtensionsSDK) => {
 };
 
 export const putDocspaceAccount = async (
-  sdk: AppExtensionsSDK,
+  pipedriveToken: PipedriveToken,
+  id: string,
   userName: string,
   passwordHash: string,
-  system: boolean,
 ) => {
-  const pctx = await sdk.execute(Command.GET_SIGNED_TOKEN);
+  const token = await pipedriveToken.getValue();
   const client = axios.create({ baseURL: process.env.BACKEND_URL });
-  axiosRetry(client, {
-    retries: 1,
-    retryCondition: (error) => error.status === 429,
-    retryDelay: (count) => count * 50,
-    shouldResetTimeout: true,
-  });
 
   await client({
     method: "PUT",
-    url: `/api/v1/user/docspace-account?system=${system}`,
+    url: `/api/v1/user/docspace-account`,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${pctx.token}`,
+      Authorization: `Bearer ${token}`,
     },
     data: {
+      id,
       userName,
       passwordHash,
     },
@@ -75,22 +72,16 @@ export const putDocspaceAccount = async (
   });
 };
 
-export const deleteDocspaceAccount = async (sdk: AppExtensionsSDK) => {
-  const pctx = await sdk.execute(Command.GET_SIGNED_TOKEN);
+export const deleteDocspaceAccount = async (pipedriveToken: PipedriveToken) => {
+  const token = await pipedriveToken.getValue();
   const client = axios.create({ baseURL: process.env.BACKEND_URL });
-  axiosRetry(client, {
-    retries: 1,
-    retryCondition: (error) => error.status === 429,
-    retryDelay: (count) => count * 50,
-    shouldResetTimeout: true,
-  });
 
   await client({
     method: "DELETE",
     url: `/api/v1/user/docspace-account`,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${pctx.token}`,
+      Authorization: `Bearer ${token}`,
     },
     timeout: 10000,
   });

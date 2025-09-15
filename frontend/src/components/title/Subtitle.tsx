@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,9 @@ export const OnlyofficeSubtitle: React.FC<SubtitleProps> = ({
   const style = cx({
     "font-normal": !!text,
     "text-center": center,
-    "text-sm": !large,
+    "text-xs": !large,
     "text-base": large,
+    "text-onlyoffice-custom-ligth-subtitle dark:text-onlyoffice-custom-dark-subtitle": true,
   });
 
   return <p className={style}>{text}</p>;

@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 package com.onlyoffice.docspacepipedrive.web.dto.user;
 
 import com.onlyoffice.docspacepipedrive.web.dto.docspaceaccount.DocspaceAccountRequest;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,6 +28,6 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class UserRequest {
-    private Boolean system;
+    @NotNull
     private DocspaceAccountRequest docspaceAccount;
 }

@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,10 +70,14 @@ module.exports = {
             colors: {
                 onlyoffice: "#0F4071",
 
+                "onlyoffice-custom-ligth-subtitle": "#73767C",
                 "pipedrive-color-light-neutral-100": "#f5f5f6",
+                "pipedrive-color-light-neutral-200": "#ececed",
                 "pipedrive-color-light-neutral-500": "#93949a",
+                "pipedrive-color-light-neutral-700": "#65686f",
                 "pipedrive-color-light-neutral-1000": "#21232c",
                 "pipedrive-color-light-blue-200": "#e1eeff",
+                "pipedrive-color-light-blue-600": "#2b74da",
                 "pipedrive-color-light-blue-700": "#0d68c5",
                 "pipedrive-color-light-red-600": "#d83c38",
                 "pipedrive-color-light-red-700": "#c82627",
@@ -81,9 +85,11 @@ module.exports = {
                 "pipedrive-color-light-green-700": "#077838",
                 "pipedrive-color-light-divider-strong": "rgba(33, 35, 44, .24)",
 
+                "onlyoffice-custom-dark-subtitle": "#72747A",
                 "pipedrive-color-dark-neutral-100": "#1e2029",
                 "pipedrive-color-dark-neutral-200": "#2a2c35",
                 "pipedrive-color-dark-neutral-500": "#686970",
+                "pipedrive-color-dark-neutral-700": "#898b90",
                 "pipedrive-color-dark-neutral-1000": "#e2e2e4",
                 "pipedrive-color-dark-blue-100": "#001f4b",
                 "pipedrive-color-dark-blue-200": "#012a60",
@@ -110,6 +116,7 @@ module.exports = {
             },
             fontSize: {
                 base: ["14.5px", "20px"],
+                l: ["16px", "20px"],
                 xl: ["21px", "32px"]
             }
         }

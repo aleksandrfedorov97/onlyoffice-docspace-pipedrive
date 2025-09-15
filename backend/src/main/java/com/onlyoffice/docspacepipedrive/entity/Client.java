@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@
 
 package com.onlyoffice.docspacepipedrive.entity;
 
-import com.onlyoffice.docspacepipedrive.exceptions.SystemUserNotFoundException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -36,7 +34,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 
 @AllArgsConstructor
@@ -63,17 +60,4 @@ public class Client {
     @ToString.Exclude
     @Builder.Default
     private List<Room> rooms = new ArrayList<>();
-    @OneToOne
-    @JoinColumn(name = "system_user_id")
-    private User systemUser;
-
-    public User getSystemUser() {
-        return Optional.ofNullable(systemUser).orElseThrow(
-                () -> new SystemUserNotFoundException()
-        );
-    }
-
-    public Boolean existSystemUser() {
-        return systemUser != null;
-    }
 }

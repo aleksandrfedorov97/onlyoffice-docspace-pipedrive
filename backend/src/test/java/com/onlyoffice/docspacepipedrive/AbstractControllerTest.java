@@ -1,6 +1,6 @@
 /**
  *
- * (c) Copyright Ascensio System SIA 2024
+ * (c) Copyright Ascensio System SIA 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.onlyoffice.docspacepipedrive.entity.Client;
 import com.onlyoffice.docspacepipedrive.entity.DocspaceAccount;
 import com.onlyoffice.docspacepipedrive.entity.Settings;
 import com.onlyoffice.docspacepipedrive.entity.User;
+import com.onlyoffice.docspacepipedrive.entity.settings.ApiKey;
 import com.onlyoffice.docspacepipedrive.repository.ClientRepository;
 import com.onlyoffice.docspacepipedrive.service.ClientService;
 import com.onlyoffice.docspacepipedrive.service.DocspaceAccountService;
@@ -92,7 +93,8 @@ public abstract class AbstractControllerTest {
                                     new JsonFileMappingsSource(
                                             wireMockConfig().filesRoot()
                                                     .child("mappings")
-                                                    .child("pipedrive")
+                                                    .child("pipedrive"),
+                                            null
                                     )
                             )
             )
@@ -106,7 +108,8 @@ public abstract class AbstractControllerTest {
                                     new JsonFileMappingsSource(
                                             wireMockConfig().filesRoot()
                                                     .child("mappings")
-                                                    .child("docspace")
+                                                    .child("docspace"),
+                                            null
                                     )
                             )
             )
@@ -145,6 +148,10 @@ public abstract class AbstractControllerTest {
         registry.add("spring.data.redis.host", REDIS_CONTAINER::getHost);
         registry.add("spring.data.redis.port", () -> REDIS_CONTAINER.getMappedPort(6379).toString());
 
+        registry.add(
+                "spring.security.oauth2.client.provider.pipedrive.user-info-uri",
+                () -> WIREMOCK_PIPEDRIVE_SERVER.baseUrl() + "/v1/users/me"
+        );
         registry.add("pipedrive.base-api-url", WIREMOCK_PIPEDRIVE_SERVER::baseUrl);
     }
 
@@ -169,15 +176,20 @@ public abstract class AbstractControllerTest {
 
         settingsService.put(testClient.getId(), Settings.builder()
                 .url(WIREMOCK_DOCSPACE_SERVER.baseUrl())
+                .apiKey(ApiKey.builder()
+                        .value("sk-api-key-for-test")
+                        .ownerId(UUID.randomUUID())
+                        .valid(true)
+                        .build())
                 .sharedGroupId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1"))
                 .build());
 
         testDocspaceAccount = docspaceAccountService.save(
-                testUserSalesAdmin.getId(),
+                testUserSalesAdmin.getClient().getId(),
+                testUserSalesAdmin.getUserId(),
                 TestUtils.createDocspaceAccount(1L)
         );
 
-        testClient.setSystemUser(testUserSalesAdmin);
         testClient = clientService.update(testClient);
     }
 
