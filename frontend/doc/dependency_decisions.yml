@@ -1,6 +1,6 @@
 ---
 - - :approve
-  - @pipedrive/app-extensions-sdk
+  - '@pipedrive/app-extensions-sdk'
   - :who:
     :why: MIT
     :versions: []
