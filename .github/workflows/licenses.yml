@@ -42,9 +42,9 @@ jobs:
         with:
           project_license: ${{ steps.license.outputs.license }}
           working_directory: ./frontend
+          policy_file: ./.check-licenses.yml
       - name: Check Licenses - Backend
         uses: ONLYOFFICE/check-licenses@v1
         with:
           project_license: ${{ steps.license.outputs.license }}
           working_directory: ./backend
-          policy_file: ./.check-licenses.yml
