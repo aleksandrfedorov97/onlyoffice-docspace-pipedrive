@@ -47,3 +47,4 @@ jobs:
         with:
           project_license: ${{ steps.license.outputs.license }}
           working_directory: ./backend
+          policy_file: ./license-policy.xml
